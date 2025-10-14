@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rota Efficiency Calculator</title>
+    <style>
+        /* --- General Styling --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f4f7f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 2rem;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        /* --- Calculator Container --- */
+        .calculator-container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 700px;
+            padding: 2rem;
+            border-top: 5px solid #005A9C; /* NHS Blue */
+        }
+
+        h1 {
+            color: #005A9C;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            font-size: 1.8rem;
+        }
+
+        /* --- Form Styling --- */
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        input[type="number"], select {
+            padding: 0.75rem;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="number"]:focus, select:focus {
+            outline: none;
+            border-color: #005A9C;
+        }
+        
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        button {
+            grid-column: 1 / -1;
+            padding: 1rem;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #fff;
+            background-color: #007f3b; /* NHS Green */
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            margin-top: 1rem;
+        }
+
+        button:hover {
+            background-color: #006a31;
+        }
+
+        /* --- Results Section --- */
+        #results {
+            margin-top: 2rem;
+            background-color: #f4f7f9;
+            padding: 1.5rem;
+            border-radius: 8px;
+        }
+
+        h2 {
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 1.5rem;
+            color: #005A9C;
+        }
+        
+        .result-grid {
+             display: grid;
+             grid-template-columns: 1fr 1fr;
+             gap: 1rem;
+             text-align: center;
+        }
+
+        .result-item {
+            background: #fff;
+            padding: 1rem;
+            border-radius: 6px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        
+        .result-item h3 {
+             margin: 0 0 0.5rem 0;
+             font-size: 0.9rem;
+             color: #555;
+             font-weight: normal;
+        }
+
+        .result-item p {
+             margin: 0;
+             font-size: 1.5rem;
+             font-weight: bold;
+        }
+
+        #predicted-wte-result, #shortfall-result {
+             grid-column: 1 / -1;
+             background-color: #005A9C;
+             color: #fff;
+        }
+        
+        #predicted-wte-result p {
+            font-size: 2.5rem;
+        }
+        
+        #predicted-wte-result h3, #shortfall-result h3 {
+             color: #fff;
+             opacity: 0.9;
+        }
+        
+        #gap-analysis-section {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+            border-top: 2px solid #ddd;
+            padding-top: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        #cost-result {
+            background-color: #d5281b; /* NHS Red */
+            color: #fff;
+        }
+        #cost-result h3 {
+            color: #fff;
+            opacity: 0.9;
+        }
+        
+        .positive {
+            color: #007f3b; /* NHS Green */
+        }
+        
+        .negative {
+            color: #d5281b; /* NHS Red */
+        }
+        
+        /* --- Explanations --- */
+        .explanation {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        .explanation h3 {
+            color: #333;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="calculator-container">
+        <h1>Rota Efficiency Calculator</h1>
+        <form id="rotaForm">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="numRotas">Number of Rotas</label>
+                    <input type="number" id="numRotas" required min="1" value="4">
+                </div>
+                 <div class="form-group">
+                    <label for="rotaFrequency">Rota Frequency</label>
+                    <select id="rotaFrequency">
+                        <option value="6">1-in-6</option>
+                        <option value="7">1-in-7</option>
+                        <option value="8" selected>1-in-8</option>
+                        <option value="9">1-in-9</option>
+                        <option value="10">1-in-10</option>
+                    </select>
+                </div>
+                <div class="form-group full-width">
+                    <label for="rosteringSystem">Rostering System</label>
+                    <select id="rosteringSystem">
+                         <option value="pooled">Flexible & Pooled (Staff can move between rotas)</option>
+                         <option value="flexible_siloed">Flexible & Siloed (Staff are fixed to one rota)</option>
+                         <option value="rigid_siloed" selected>Rigid & Siloed (Fixed pattern, staff fixed to one rota)</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="numDoctors">Total Number of Doctors</label>
+                    <input type="number" id="numDoctors" required min="1" value="42">
+                </div>
+                <div class="form-group">
+                    <label for="totalWTE">Total WTE Provided</label>
+                    <input type="number" id="totalWTE" required step="0.1" min="1" value="36.0">
+                </div>
+                <div class="form-group full-width">
+                    <label for="payRate">Hourly Pay Rate for Cover (£)</label>
+                    <input type="number" id="payRate" required step="1" min="1" value="60">
+                </div>
+                <button type="submit">Calculate Required WTE</button>
+            </div>
+        </form>
+
+        <div id="results" style="display: none;">
+            <h2>Calculation Results</h2>
+            <div class="result-grid">
+                <div class="result-item">
+                    <h3>Minimum WTE</h3>
+                    <p id="min-wte-result">-</p>
+                </div>
+                 <div class="result-item">
+                    <h3>Fragmentation ($F_i$)</h3>
+                    <p id="frag-index-result">-</p>
+                </div>
+                 <div class="result-item">
+                    <h3>Severity ($S$)</h3>
+                    <p id="severity-factor-result">-</p>
+                </div>
+                 <div class="result-item">
+                    <h3>Rigidity ($R$)</h3>
+                    <p id="rigidity-factor-result">-</p>
+                </div>
+                <div class="result-item" id="predicted-wte-result">
+                    <h3>Predicted WTE Required</h3>
+                    <p id="final-wte-result">-</p>
+                </div>
+                <div class="result-item" id="shortfall-result">
+                     <h3>Current Surplus / Shortfall</h3>
+                    <p id="surplus-shortfall-result">-</p>
+                </div>
+                
+                <div id="gap-analysis-section" style="display: none;">
+                    <div class="result-item" id="gaps-result">
+                        <h3>Predicted Gaps (per 8 weeks)</h3>
+                        <p class="negative">-</p>
+                    </div>
+                    <div class="result-item" id="cost-result">
+                        <h3>Cost to Cover Gaps (£)</h3>
+                        <p>-</p>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+        
+        <div class="explanation">
+            <h3>About This Calculator</h3>
+            <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. It accounts for three key inefficiency factors:</p>
+            <ul>
+                <li><strong>Fragmentation ($F_i$):</strong> A higher ratio of doctors to WTE increases inefficiency due to the greater number of individual scheduling constraints.</li>
+                <li><strong>Severity ($S$):</strong> Assumes a high-complexity rota (12hr shifts with multi-day rest), which is more fragile and requires a larger WTE buffer.</li>
+                <li><strong>Rigidity ($R$):</strong> Rigid, pre-planned rotas are less efficient than flexible systems. Pooling staff across rotas is the most efficient system.</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('rotaForm').addEventListener('submit', function(event) {
+            event.preventDefault(); 
+
+            // --- 1. Get Inputs ---
+            const numRotas = parseFloat(document.getElementById('numRotas').value);
+            const rotaFrequency = parseFloat(document.getElementById('rotaFrequency').value);
+            const rosteringSystem = document.getElementById('rosteringSystem').value;
+            const numDoctors = parseFloat(document.getElementById('numDoctors').value);
+            const totalWTE = parseFloat(document.getElementById('totalWTE').value);
+            const payRate = parseFloat(document.getElementById('payRate').value);
+            
+            if (isNaN(numRotas) || isNaN(rotaFrequency) || isNaN(numDoctors) || isNaN(totalWTE) || isNaN(payRate) || totalWTE <= 0) {
+                alert("Please enter valid numbers for all fields.");
+                return;
+            }
+
+            // --- 2. Calculate Factors ---
+            const minWTE = numRotas * rotaFrequency;
+            const fragmentationIndex = numDoctors / totalWTE;
+            const severityFactor = 1.4; // Fixed for extreme complexity (12hr shifts)
+            
+            let rigidityFactor;
+            switch(rosteringSystem) {
+                case 'pooled':
+                    rigidityFactor = 0.89; // Pooled system is more efficient than the baseline
+                    break;
+                case 'flexible_siloed':
+                    rigidityFactor = 1.0; // Baseline efficient system
+                    break;
+                case 'rigid_siloed':
+                    rigidityFactor = 1.18; // Rigid system is ~18% less efficient
+                    break;
+                default:
+                    rigidityFactor = 1.0;
+            }
+            
+            // --- 3. The Final Calculation ---
+            const wteForFlexibleSiloed = minWTE * Math.pow(fragmentationIndex, severityFactor);
+            const predictedWTE = wteForFlexibleSiloed * rigidityFactor;
+            const surplusShortfall = totalWTE - predictedWTE;
+
+            // --- 4. Gap and Cost Calculation ---
+            const gapAnalysisSection = document.getElementById('gap-analysis-section');
+            if (surplusShortfall < 0) {
+                const wteDeficit = -surplusShortfall;
+                // Based on simulations, 1.0 WTE deficit creates ~14 gaps in an 8-week cycle.
+                const predictedGaps = Math.round(wteDeficit * 14);
+                const financialCost = predictedGaps * 12.5 * payRate;
+
+                document.getElementById('gaps-result').querySelector('p').textContent = predictedGaps;
+                document.getElementById('cost-result').querySelector('p').textContent = `£${financialCost.toLocaleString()}`;
+                gapAnalysisSection.style.display = 'grid';
+            } else {
+                gapAnalysisSection.style.display = 'none';
+            }
+
+            // --- 5. Display Main Results ---
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('min-wte-result').textContent = minWTE.toFixed(2);
+            document.getElementById('frag-index-result').textContent = fragmentationIndex.toFixed(2);
+            document.getElementById('severity-factor-result').textContent = severityFactor.toFixed(2);
+            document.getElementById('rigidity-factor-result').textContent = rigidityFactor.toFixed(2);
+            document.getElementById('final-wte-result').textContent = predictedWTE.toFixed(2);
+            
+            const shortfallElement = document.getElementById('surplus-shortfall-result');
+            shortfallElement.textContent = surplusShortfall.toFixed(2);
+            shortfallElement.classList.remove('positive', 'negative');
+            if (surplusShortfall >= 0) {
+                shortfallElement.classList.add('positive');
+                shortfallElement.textContent = `+${surplusShortfall.toFixed(2)}`;
+            } else {
+                shortfallElement.classList.add('negative');
+            }
+        });
+    </script>
+</body>
+</html>
