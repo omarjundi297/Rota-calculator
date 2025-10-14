@@ -194,7 +194,7 @@
             <div class="form-grid">
                 <div class="form-group">
                     <label for="numRotas">Number of Rotas</label>
-                    <input type="number" id="numRotas" required min="1" value="1">
+                    <input type="number" id="numRotas" required min="1" value="4">
                 </div>
                  <div class="form-group">
                     <label for="rotaFrequency">Rota Frequency</label>
@@ -209,9 +209,9 @@
                 <div class="form-group full-width">
                     <label for="rosteringSystem">Rostering System</label>
                     <select id="rosteringSystem">
-                         <option value="pooled">Flexible & Pooled (Staff can move between rotas)</option>
-                         <option value="flexible_siloed">Flexible & Siloed (Staff are fixed to one rota)</option>
-                         <option value="rigid_siloed" selected>Rigid & Siloed (Fixed pattern, staff fixed to one rota)</option>
+                         <option value="pooled">Flexible & Pooled</option>
+                         <option value="flexible_siloed">Flexible & Siloed</option>
+                         <option value="rigid_siloed" selected>Rigid & Siloed</option>
                     </select>
                 </div>
                 <div class="form-group">
@@ -242,11 +242,11 @@
                     <p id="frag-index-result">-</p>
                 </div>
                  <div class="result-item">
-                    <h3>Inefficiency Factor</h3>
+                    <h3>WTE Cost of Inefficiency</h3>
                     <p id="inefficiency-factor-result">-</p>
                 </div>
                  <div class="result-item">
-                    <h3>Rigidity ($R$)</h3>
+                    <h3>Rigidity Impact</h3>
                     <p id="rigidity-factor-result">-</p>
                 </div>
                 <div class="result-item" id="predicted-wte-result">
@@ -276,8 +276,8 @@
             <h3>About This Calculator</h3>
             <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. It accounts for two key inefficiency factors:</p>
             <ul>
-                <li><strong>Fragmentation & Severity:</strong> This combined factor models the cost of workforce fragmentation on a high-complexity rota. It now uses a blended formula to accurately predict gaps in systems with both low and high numbers of LTFT staff.</li>
-                <li><strong>Rigidity ($R$):</strong> This factor models the inefficiency of pre-planned rotas. The penalty now scales with fragmentation, correctly predicting zero planned gaps for a perfectly-staffed, full-time rigid rota.</li>
+                <li><strong>Fragmentation:</strong> The "cost" of workforce fragmentation is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
+                <li><strong>Rigidity:</strong> This factor models the inefficiency of pre-planned rotas vs. flexible ones. A pooled system is most efficient, while rigid systems carry a penalty that scales with the degree of fragmentation.</li>
             </ul>
         </div>
     </div>
@@ -299,38 +299,44 @@
                 return;
             }
 
-            // --- 2. Calculate Factors ---
+            // --- 2. Calculate Base Factors ---
             const minWTE = numRotas * rotaFrequency;
             const fragmentationIndex = numDoctors / totalWTE;
-            
-            // --- REFINED INEFFICIENCY LOGIC ---
-            // This blended model calculates an "inefficiency cost" in WTE.
-            // It's more linear at low fragmentation and more exponential at high fragmentation.
             const excessFragmentation = Math.max(0, fragmentationIndex - 1.0);
-            const inefficiencyCost = (excessFragmentation * 0.3) + Math.pow(excessFragmentation, 2);
-            const wteCostFactor = inefficiencyCost * minWTE;
-            
-            let rigidityFactor;
-            const baseRigidityPenalty = 0.18; 
 
-            if (rosteringSystem === 'rigid_siloed') {
-                const scaledPenalty = baseRigidityPenalty * (excessFragmentation / 0.25);
-                rigidityFactor = 1.0 + Math.min(baseRigidityPenalty, scaledPenalty);
-            } else if (rosteringSystem === 'pooled') {
-                rigidityFactor = 0.89;
-            } else { // flexible_siloed
-                rigidityFactor = 1.0; 
+            // --- 3. REFINED Inefficiency Calculation ---
+            // This quadratic model accurately handles both low and high fragmentation.
+            // A 'k' coefficient determines the severity of the inefficiency cost based on the system.
+            let k_coefficient;
+            let rigidityImpactText;
+
+            switch(rosteringSystem) {
+                case 'pooled':
+                    k_coefficient = 1.2; 
+                    rigidityImpactText = "High Efficiency";
+                    break;
+                case 'flexible_siloed':
+                    k_coefficient = 1.6; 
+                    rigidityImpactText = "Baseline";
+                    break;
+                case 'rigid_siloed':
+                    k_coefficient = 4.8;
+                    rigidityImpactText = "Low Efficiency";
+                    break;
+                default:
+                    k_coefficient = 1.6;
+                    rigidityImpactText = "Baseline";
             }
-            
-            // --- 3. The Final Calculation ---
-            const wteForFlexibleSiloed = minWTE + wteCostFactor;
-            const predictedWTE = wteForFlexibleSiloed * rigidityFactor;
+
+            const wteCostOfInefficiency = (k_coefficient * Math.pow(excessFragmentation, 2)) * minWTE;
+            const predictedWTE = minWTE + wteCostOfInefficiency;
             const surplusShortfall = totalWTE - predictedWTE;
 
             // --- 4. Gap and Cost Calculation ---
             const gapAnalysisSection = document.getElementById('gap-analysis-section');
             if (surplusShortfall < 0) {
                 const wteDeficit = -surplusShortfall;
+                // Based on simulations, 1.0 WTE deficit creates ~14 gaps in an 8-week cycle.
                 const predictedGaps = Math.round(wteDeficit * 14);
                 const financialCost = predictedGaps * 12.5 * payRate;
 
@@ -345,8 +351,8 @@
             document.getElementById('results').style.display = 'block';
             document.getElementById('min-wte-result').textContent = minWTE.toFixed(2);
             document.getElementById('frag-index-result').textContent = fragmentationIndex.toFixed(2);
-            document.getElementById('inefficiency-factor-result').textContent = wteCostFactor.toFixed(2);
-            document.getElementById('rigidity-factor-result').textContent = rigidityFactor.toFixed(2);
+            document.getElementById('inefficiency-factor-result').textContent = wteCostOfInefficiency.toFixed(2);
+            document.getElementById('rigidity-factor-result').textContent = rigidityImpactText;
             document.getElementById('final-wte-result').textContent = predictedWTE.toFixed(2);
             
             const shortfallElement = document.getElementById('surplus-shortfall-result');
