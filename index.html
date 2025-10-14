@@ -278,7 +278,7 @@
             <ul>
                 <li><strong>Fragmentation ($F_i$):</strong> A higher ratio of doctors to WTE increases inefficiency due to the greater number of individual scheduling constraints.</li>
                 <li><strong>Severity ($S$):</strong> Assumes a high-complexity rota (12hr shifts with multi-day rest), which is more fragile and requires a larger WTE buffer.</li>
-                <li><strong>Rigidity ($R$):</strong> Rigid, pre-planned rotas are less efficient than flexible systems. Pooling staff across rotas is the most efficient system.</li>
+                <li><strong>Rigidity ($R$):</strong> Rigid, pre-planned rotas are less efficient than flexible systems. This factor now scales with fragmentation, correctly predicting zero planned gaps for a fully-staffed, full-time rigid rota.</li>
             </ul>
         </div>
     </div>
@@ -306,18 +306,17 @@
             const severityFactor = 1.4; // Fixed for extreme complexity (12hr shifts)
             
             let rigidityFactor;
-            switch(rosteringSystem) {
-                case 'pooled':
-                    rigidityFactor = 0.89; // Pooled system is more efficient than the baseline
-                    break;
-                case 'flexible_siloed':
-                    rigidityFactor = 1.0; // Baseline efficient system
-                    break;
-                case 'rigid_siloed':
-                    rigidityFactor = 1.18; // Rigid system is ~18% less efficient
-                    break;
-                default:
-                    rigidityFactor = 1.0;
+            const baseRigidityPenalty = 0.18; // The ~18% penalty for a highly fragmented rigid system.
+
+            if (rosteringSystem === 'rigid_siloed') {
+                // The penalty scales from 0% (at Fi=1.0) to 18% (at Fi=1.25, i.e., a fully 80% workforce)
+                const excessFragmentation = Math.max(0, fragmentationIndex - 1.0);
+                const scaledPenalty = baseRigidityPenalty * (excessFragmentation / 0.25);
+                rigidityFactor = 1.0 + Math.min(baseRigidityPenalty, scaledPenalty); // Cap the penalty at the max
+            } else if (rosteringSystem === 'pooled') {
+                rigidityFactor = 0.89; // Pooled system is more efficient
+            } else { // flexible_siloed
+                rigidityFactor = 1.0; // Baseline
             }
             
             // --- 3. The Final Calculation ---
