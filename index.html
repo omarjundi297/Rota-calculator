@@ -216,7 +216,7 @@
                 </div>
                 <div class="form-group">
                     <label for="numDoctors">Total Number of Doctors</label>
-                    <input type="number" id="numDoctors" required min="1" value="33">
+                    <input type="number" id="numDoctors" required min="1" value="32">
                 </div>
                 <div class="form-group">
                     <label for="totalWTE">Total WTE Provided</label>
@@ -246,7 +246,7 @@
                     <p id="inefficiency-factor-result">-</p>
                 </div>
                  <div class="result-item">
-                    <h3>Rigidity Impact</h3>
+                    <h3>System Multiplier</h3>
                     <p id="rigidity-factor-result">-</p>
                 </div>
                 <div class="result-item" id="predicted-wte-result">
@@ -274,10 +274,10 @@
         
         <div class="explanation">
             <h3>About This Calculator</h3>
-            <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. It accounts for two key inefficiency factors:</p>
+            <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. The final prediction is based on the Minimum WTE plus the calculated WTE Cost of Inefficiency.</p>
             <ul>
-                <li><strong>Fragmentation:</strong> The "cost" of workforce fragmentation is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
-                <li><strong>Rigidity:</strong> This factor models the inefficiency of pre-planned rotas vs. flexible ones. A pooled system is most efficient, while rigid systems carry a penalty that scales with the degree of fragmentation.</li>
+                <li><strong>WTE Cost of Inefficiency:</strong> This is the extra WTE required to overcome workforce fragmentation. It is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
+                <li><strong>System Multiplier:</strong> The type of rostering system determines the true cost of fragmentation. A pooled system is most efficient at handling it (lowest multiplier), while a rigid, siloed system is the least efficient (highest multiplier).</li>
             </ul>
         </div>
     </div>
@@ -305,30 +305,27 @@
             const excessFragmentation = Math.max(0, fragmentationIndex - 1.0);
 
             // --- 3. REFINED Inefficiency Calculation ---
-            // This quadratic model accurately handles both low and high fragmentation.
-            // A 'k' coefficient determines the severity of the inefficiency cost based on the system.
-            let k_coefficient;
-            let rigidityImpactText;
+            // The inefficiency cost is calculated for a baseline 'flexible_siloed' system.
+            const k_baseline = 1.6;
+            const baseInefficiencyCost = (k_baseline * Math.pow(excessFragmentation, 2)) * minWTE;
 
+            // The system type then acts as a multiplier on that baseline cost.
+            let systemMultiplier;
             switch(rosteringSystem) {
                 case 'pooled':
-                    k_coefficient = 1.2; 
-                    rigidityImpactText = "High Efficiency";
+                    systemMultiplier = 0.4; // Very efficient at handling fragmentation
                     break;
                 case 'flexible_siloed':
-                    k_coefficient = 1.6; 
-                    rigidityImpactText = "Baseline";
+                    systemMultiplier = 1.0; // The baseline
                     break;
                 case 'rigid_siloed':
-                    k_coefficient = 4.8;
-                    rigidityImpactText = "Low Efficiency";
+                    systemMultiplier = 5.0; // Very inefficient at handling fragmentation
                     break;
                 default:
-                    k_coefficient = 1.6;
-                    rigidityImpactText = "Baseline";
+                    systemMultiplier = 1.0;
             }
 
-            const wteCostOfInefficiency = (k_coefficient * Math.pow(excessFragmentation, 2)) * minWTE;
+            const wteCostOfInefficiency = baseInefficiencyCost * systemMultiplier;
             const predictedWTE = minWTE + wteCostOfInefficiency;
             const surplusShortfall = totalWTE - predictedWTE;
 
@@ -352,7 +349,7 @@
             document.getElementById('min-wte-result').textContent = minWTE.toFixed(2);
             document.getElementById('frag-index-result').textContent = fragmentationIndex.toFixed(2);
             document.getElementById('inefficiency-factor-result').textContent = wteCostOfInefficiency.toFixed(2);
-            document.getElementById('rigidity-factor-result').textContent = rigidityImpactText;
+            document.getElementById('rigidity-factor-result').textContent = `x ${systemMultiplier.toFixed(1)}`;
             document.getElementById('final-wte-result').textContent = predictedWTE.toFixed(2);
             
             const shortfallElement = document.getElementById('surplus-shortfall-result');
