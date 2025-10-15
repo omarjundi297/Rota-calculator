@@ -184,6 +184,19 @@
             color: #333;
         }
 
+        /* --- Mobile Responsive --- */
+        @media (max-width: 600px) {
+            body {
+                padding: 1rem;
+            }
+            .calculator-container {
+                padding: 1.5rem;
+            }
+            .form-grid, .result-grid, #gap-analysis-section {
+                grid-template-columns: 1fr;
+            }
+        }
+
     </style>
 </head>
 <body>
@@ -238,16 +251,8 @@
                     <p id="min-wte-result">-</p>
                 </div>
                  <div class="result-item">
-                    <h3>Fragmentation ($F_i$)</h3>
-                    <p id="frag-index-result">-</p>
-                </div>
-                 <div class="result-item">
                     <h3>WTE Cost of Inefficiency</h3>
                     <p id="inefficiency-factor-result">-</p>
-                </div>
-                 <div class="result-item">
-                    <h3>System Multiplier</h3>
-                    <p id="rigidity-factor-result">-</p>
                 </div>
                 <div class="result-item" id="predicted-wte-result">
                     <h3>Predicted WTE Required</h3>
@@ -277,7 +282,7 @@
             <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. The final prediction is based on the Minimum WTE plus the calculated WTE Cost of Inefficiency.</p>
             <ul>
                 <li><strong>WTE Cost of Inefficiency:</strong> This is the extra WTE required to overcome workforce fragmentation. It is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
-                <li><strong>System Multiplier:</strong> The type of rostering system determines the true cost of fragmentation. A pooled system is most efficient at handling it (lowest multiplier), while a rigid, siloed system is the least efficient (highest multiplier).</li>
+                <li><strong>System Multiplier:</strong> The type of rostering system determines the true cost of fragmentation. A pooled system is most efficient at handling it, while a rigid, siloed system is the least efficient. This is factored into the calculation.</li>
             </ul>
         </div>
     </div>
@@ -347,9 +352,7 @@
             // --- 5. Display Main Results ---
             document.getElementById('results').style.display = 'block';
             document.getElementById('min-wte-result').textContent = minWTE.toFixed(2);
-            document.getElementById('frag-index-result').textContent = fragmentationIndex.toFixed(2);
             document.getElementById('inefficiency-factor-result').textContent = wteCostOfInefficiency.toFixed(2);
-            document.getElementById('rigidity-factor-result').textContent = `x ${systemMultiplier.toFixed(1)}`;
             document.getElementById('final-wte-result').textContent = predictedWTE.toFixed(2);
             
             const shortfallElement = document.getElementById('surplus-shortfall-result');
