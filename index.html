@@ -18,15 +18,34 @@
             margin: 0;
         }
 
-        /* --- Calculator Container --- */
-        .calculator-container {
+        /* --- Desktop: Two-Column Wrapper --- */
+        .page-wrapper {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            width: 100%;
+            max-width: 1400px;
+            align-items: flex-start;
+        }
+        
+        /* --- Card Styling (for all boxes) --- */
+        .calculator-container,
+        #results,
+        .explanation {
             background-color: #ffffff;
             border-radius: 12px;
             box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 700px;
             padding: 2rem;
-            border-top: 5px solid #005A9C; /* NHS Blue */
+        }
+
+        .calculator-container {
+             border-top: 5px solid #005A9C; /* NHS Blue */
+        }
+        
+        .results-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
         }
 
         h1 {
@@ -92,7 +111,6 @@
 
         /* --- Results Section --- */
         #results {
-            margin-top: 2rem;
             background-color: #f4f7f9;
             padding: 1.5rem;
             border-radius: 8px;
@@ -176,7 +194,6 @@
         
         /* --- Explanations --- */
         .explanation {
-            margin-top: 2rem;
             font-size: 0.9rem;
             color: #666;
         }
@@ -185,11 +202,20 @@
         }
 
         /* --- Mobile Responsive --- */
+        
+        /* Stacks the two main columns on tablets and phones */
+        @media (max-width: 900px) {
+            .page-wrapper {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Stacks form items and result items on small screens */
         @media (max-width: 600px) {
             body {
                 padding: 1rem;
             }
-            .calculator-container {
+            .calculator-container, #results, .explanation {
                 padding: 1.5rem;
             }
             .form-grid, .result-grid, #gap-analysis-section {
@@ -201,89 +227,92 @@
 </head>
 <body>
 
-    <div class="calculator-container">
-        <h1>Rota Efficiency Calculator</h1>
-        <form id="rotaForm">
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="numRotas">Number of Rotas</label>
-                    <input type="number" id="numRotas" required min="1" value="4">
-                </div>
-                 <div class="form-group">
-                    <label for="rotaFrequency">Rota Frequency</label>
-                    <select id="rotaFrequency">
-                        <option value="6">1-in-6</option>
-                        <option value="7">1-in-7</option>
-                        <option value="8" selected>1-in-8</option>
-                        <option value="9">1-in-9</option>
-                        <option value="10">1-in-10</option>
-                    </select>
-                </div>
-                <div class="form-group full-width">
-                    <label for="rosteringSystem">Rostering System</label>
-                    <select id="rosteringSystem">
-                         <option value="pooled">Flexible & Pooled</option>
-                         <option value="flexible_siloed">Flexible & Siloed</option>
-                         <option value="rigid_siloed" selected>Rigid & Siloed</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label for="numDoctors">Total Number of Doctors</label>
-                    <input type="number" id="numDoctors" required min="1" value="32">
-                </div>
-                <div class="form-group">
-                    <label for="totalWTE">Total WTE Provided</label>
-                    <input type="number" id="totalWTE" required step="0.1" min="1" value="32.0">
-                </div>
-                <div class="form-group full-width">
-                    <label for="payRate">Hourly Pay Rate for Cover (£)</label>
-                    <input type="number" id="payRate" required step="1" min="1" value="60">
-                </div>
-                <button type="submit">Calculate Required WTE</button>
-            </div>
-        </form>
-
-        <div id="results" style="display: none;">
-            <h2>Calculation Results</h2>
-            <div class="result-grid">
-                <div class="result-item">
-                    <h3>Minimum WTE</h3>
-                    <p id="min-wte-result">-</p>
-                </div>
-                 <div class="result-item">
-                    <h3>WTE Cost of Inefficiency</h3>
-                    <p id="inefficiency-factor-result">-</p>
-                </div>
-                <div class="result-item" id="predicted-wte-result">
-                    <h3>Predicted WTE Required</h3>
-                    <p id="final-wte-result">-</p>
-                </div>
-                <div class="result-item" id="shortfall-result">
-                     <h3>Current Surplus / Shortfall</h3>
-                    <p id="surplus-shortfall-result">-</p>
-                </div>
-                
-                <div id="gap-analysis-section" style="display: none;">
-                    <div class="result-item" id="gaps-result">
-                        <h3>Predicted Gaps (per 8 weeks)</h3>
-                        <p class="negative">-</p>
+    <div class="page-wrapper">
+        <div class="calculator-container">
+            <h1>Rota Efficiency Calculator</h1>
+            <form id="rotaForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="numRotas">Number of Rotas</label>
+                        <input type="number" id="numRotas" required min="1" value="4">
                     </div>
-                    <div class="result-item" id="cost-result">
-                        <h3>Cost to Cover Gaps (£)</h3>
-                        <p>-</p>
+                     <div class="form-group">
+                        <label for="rotaFrequency">Rota Frequency</label>
+                        <select id="rotaFrequency">
+                            <option value="6">1-in-6</option>
+                            <option value="7">1-in-7</option>
+                            <option value="8" selected>1-in-8</option>
+                            <option value="9">1-in-9</option>
+                            <option value="10">1-in-10</option>
+                        </select>
                     </div>
+                    <div class="form-group full-width">
+                        <label for="rosteringSystem">Rostering System</label>
+                        <select id="rosteringSystem">
+                             <option value="pooled">Flexible & Pooled</option>
+                             <option value="flexible_siloed">Flexible & Siloed</option>
+                             <option value="rigid_siloed" selected>Rigid & Siloed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="numDoctors">Total Number of Doctors</label>
+                        <input type="number" id="numDoctors" required min="1" value="32">
+                    </div>
+                    <div class="form-group">
+                        <label for="totalWTE">Total WTE Provided</label>
+                        <input type="number" id="totalWTE" required step="0.1" min="1" value="32.0">
+                    </div>
+                    <div class="form-group full-width">
+                        <label for="payRate">Hourly Pay Rate for Cover (£)</label>
+                        <input type="number" id="payRate" required step="1" min="1" value="60">
+                    </div>
+                    <button type="submit">Calculate Required WTE</button>
                 </div>
-                
-            </div>
+            </form>
         </div>
-        
-        <div class="explanation">
-            <h3>About This Calculator</h3>
-            <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. The final prediction is based on the Minimum WTE plus the calculated WTE Cost of Inefficiency.</p>
-            <ul>
-                <li><strong>WTE Cost of Inefficiency:</strong> This is the extra WTE required to overcome workforce fragmentation. It is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
-                <li><strong>System Multiplier:</strong> The type of rostering system determines the true cost of fragmentation. A pooled system is most efficient at handling it, while a rigid, siloed system is the least efficient. This is factored into the calculation.</li>
-            </ul>
+
+        <div class="results-wrapper">
+            <div id="results" style="display: none;">
+                <h2>Calculation Results</h2>
+                <div class="result-grid">
+                    <div class="result-item">
+                        <h3>Minimum WTE</h3>
+                        <p id="min-wte-result">-</p>
+                    </div>
+                     <div class="result-item">
+                        <h3>WTE Cost of Inefficiency</h3>
+                        <p id="inefficiency-factor-result">-</p>
+                    </div>
+                    <div class="result-item" id="predicted-wte-result">
+                        <h3>Predicted WTE Required</h3>
+                        <p id="final-wte-result">-</p>
+                    </div>
+                    <div class="result-item" id="shortfall-result">
+                         <h3>Current Surplus / Shortfall</h3>
+                        <p id="surplus-shortfall-result">-</p>
+                    </div>
+                    
+                    <div id="gap-analysis-section" style="display: none;">
+                        <div class="result-item" id="gaps-result">
+                            <h3>Predicted Gaps (per 8 weeks)</h3>
+                            <p class="negative">-</p>
+                        </div>
+                        <div class="result-item" id="cost-result">
+                            <h3>Cost to Cover Gaps (£)</h3>
+                            <p>-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="explanation">
+                <h3>About This Calculator</h3>
+                <p>This tool uses a validated model to predict the Whole Time Equivalent (WTE) staffing required to run a stable rota. The final prediction is based on the Minimum WTE plus the calculated WTE Cost of Inefficiency.</p>
+                <ul>
+                    <li><strong>WTE Cost of Inefficiency:</strong> This is the extra WTE required to overcome workforce fragmentation. It is calculated using a quadratic model that accurately predicts the small number of gaps in nearly full-time systems while also capturing the large impact in highly fragmented teams.</li>
+                    <li><strong>System Multiplier:</strong> The type of rostering system determines the true cost of fragmentation. A pooled system is most efficient at handling it (lowest cost), while a rigid, siloed system is the least efficient (highest cost). This is factored into the calculation.</li>
+                </ul>
+            </div>
         </div>
     </div>
 
